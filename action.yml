@@ -1,5 +1,5 @@
 name: 'Email Security Report'
-description: 'Emails a Trivy container scan report as an attachment'
+description: 'Emails a container scan report as an attachment via the host mail relay'
 
 inputs:
   report_path:
@@ -9,25 +9,15 @@ inputs:
     description: 'Comma-separated recipient emails'
     required: true
   sender:
-    description: 'From address'
-    default: 'elijahuma001@gmail.com'
+    description: 'From address (-r); must be allowed by the relay'
     required: true
   subject:
     description: 'Email subject'
     required: true
-  smtp_server:
-    description: 'SMTP server hostname'
-    required: true
-  smtp_port:
-    description: 'SMTP port'
-    default: '25'
-  smtp_username:
-    description: 'SMTP login username'
-    required: true
-  smtp_password:
-    description: 'SMTP app password'
-    required: true
-
+  body:
+    description: 'Email body text (keep any CUI markings here)'
+    required: false
+    default: 'Please find attached the latest container scan report.'
 
 runs:
   using: 'composite'
@@ -36,12 +26,8 @@ runs:
       shell: bash
       env:
         REPORT_PATH: ${{ inputs.report_path }}
-        RECIPIENTS: ${{ inputs.recipients }}
-        SENDER: ${{ inputs.sender }}
-        SUBJECT: ${{ inputs.subject }}
-        SMTP_SERVER: ${{ inputs.smtp_server }}
-        SMTP_PORT: ${{ inputs.smtp_port }}
-        SMTP_USERNAME: ${{ inputs.smtp_username }}
-        SMTP_PASSWORD: ${{ inputs.smtp_password }}
-
+        RECIPIENTS:  ${{ inputs.recipients }}
+        SENDER:      ${{ inputs.sender }}
+        SUBJECT:     ${{ inputs.subject }}
+        BODY:        ${{ inputs.body }}
       run: python3 ${{ github.action_path }}/send_report.py
