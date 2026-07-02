@@ -1,0 +1,45 @@
+# ccte-docker-build/.github/workflows/notify-consumers.yml
+# When action.yml changes on main, trigger a build in every consuming
+# repo so breakage surfaces immediately -- not on their next deploy.
+#
+# NOTE: if app repos pin USEPA/ccte-docker-build@v1 instead of @main,
+# change the trigger below to tags so builds test the released version:
+#   on:
+#     push:
+#       tags: ['v*']
+
+name: Notify consumer repos
+
+on:
+  push:
+    branches: [main]
+    paths: ['action.yml']
+  workflow_dispatch: {}   # manual re-fire for testing
+
+jobs:
+  dispatch:
+    runs-on: [self-hosted]
+    env:
+      # The fleet. One repo per line.
+      REPOS: |
+        Davewst/Docker-build
+    steps:
+      - name: Dispatch builds
+        run: |
+          set -u
+          FAILED=0
+          for REPO in ${REPOS}; do
+            echo "Dispatching to ${REPO}"
+            if curl -sf -X POST \
+              -H "Authorization: Bearer ${{ secrets.FLEET_DISPATCH_TOKEN }}" \
+              -H "Accept: application/vnd.github+json" \
+              "${GITHUB_API_URL}/repos/${REPO}/dispatches" \
+              -d '{"event_type":"ccte-docker-build-updated","client_payload":{"action_sha":"${{ github.sha }}"}}'
+            then
+              echo "  OK"
+            else
+              echo "::error::dispatch failed for ${REPO}"
+              FAILED=1
+            fi
+          done
+          exit ${FAILED}
