@@ -31,3 +31,4 @@ runs:
         SUBJECT:     ${{ inputs.subject }}
         BODY:        ${{ inputs.body }}
       run: python3 ${{ github.action_path }}/send_report.py
+
